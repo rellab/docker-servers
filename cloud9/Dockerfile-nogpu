@@ -1,0 +1,54 @@
+From ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update &&\
+    apt-get install -y --no-install-recommends \
+    openssh-server \
+    build-essential \
+    git \
+    wget \
+    curl \
+    python \
+    sudo \
+    locales \
+    vim \
+    ca-certificates \
+    libevent-dev \
+    tmux \
+    nodejs \
+    npm \
+    sqlite3 \
+    libsqlite3-dev \
+    whois &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/*
+
+RUN locale-gen en_US.UTF-8
+ENV LANG       en_US.UTF-8
+ENV LANGUAGE   en_US:en
+ENV LC_ALL     en_US.UTF-8
+ENV TZ         Asia/Tokyo
+
+RUN mkdir /var/run/sshd
+
+COPY c9-install.sh /c9-install.sh
+RUN HOME=/etc/skel /c9-install.sh
+
+COPY entrypoint.sh /entrypoint.sh
+
+ENV CLOUD9_USER       cloud9
+ENV CLOUD9_PASSWORD   no
+ENV CLOUD9_GROUP      cloud9
+ENV CLOUD9_HOME       /home/cloud9
+ENV CLOUD9_UID        1000
+ENV CLOUD9_GID        1000
+ENV CLOUD9_GRANT_SUDO nopass
+ENV CLOUD9_RSA        RSApubkey
+
+RUN groupadd -f -g $CLOUD9_GID $CLOUD9_GROUP &&\
+    useradd -d $CLOUD9_HOME -u $CLOUD9_UID -g $CLOUD9_GID -s /bin/bash $CLOUD9_USER
+
+EXPOSE 22
+VOLUME /home/cloud9
+
+ENTRYPOINT ["/entrypoint.sh"]
